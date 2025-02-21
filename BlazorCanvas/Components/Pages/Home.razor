@@ -25,7 +25,7 @@
     <!-- Title, TODO, etc. remain here if you want them above everything -->
     <div style="display: flex; flex-direction: row;">
         <h3>摸擬六人桌發牌</h3>
-        </div>
+    </div>
     <div style="display: flex; flex-direction: row;">
         <!-- Left Side: Note Panel -->
         <div style="width: 200px; margin-right: 20px;">
@@ -46,6 +46,7 @@
             </CanvasHelper>
         </div>
     </div>
+
 </div>
 
 
@@ -216,7 +217,7 @@
                                  - (cardWidth + holeCardHorizontalSpacing / 2)
                                  + (holeIndex * (cardWidth + holeCardHorizontalSpacing));
                 // yOffset above the seat
-                double yOffset =40+seatY + holeCardVerticalOffset;
+                double yOffset = 40 + seatY + holeCardVerticalOffset;
 
                 // Adjust position for the leftmost seat
                 if (playerIndex == 3)  // Adjust based on seat index
