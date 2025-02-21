@@ -30,6 +30,8 @@
             <ul>
                 <li>先確定六人桌基本位置。</li>
                 <li>公共牌有按翻牌，轉牌及河牌動態出現。</li>
+                <li>先固定 Dealer。</li>
+                <li>也模擬了先固定 Hero。</li>
             </ul>
             <!-- Add Button for Next Random Hand -->
             <button @onclick="NextRandomHand"
@@ -49,6 +51,16 @@
                 </div>
             </InputRadioGroup>
 
+            <InputRadioGroup @bind-Value="FixedDealerOption">
+                <div style="margin-top: 10px;">
+                    <label>
+                        <InputRadio Value="true" /> Fixed Dealer
+                    </label>
+                    <label style="margin-left: 10px;">
+                        <InputRadio Value="false" /> Fixed Hero
+                    </label>
+                </div>
+            </InputRadioGroup>
 
 
         </div>
@@ -79,6 +91,7 @@
     private ElementReference CardBack;
 
     private bool ShowAllCards = false; // Default: Show Hero only
+    private bool FixedDealerOption = true; // Default: Fixed Dealer mode
 
 
     private bool IsDarkMode = true;
@@ -122,7 +135,7 @@
         }
     }
 
-    private void ShuffleAndDeal()
+    private void xxxShuffleAndDeal()
     {
         List<string> deck = new List<string>(deckList);
         Random rng = new Random();
@@ -130,6 +143,41 @@
 
         // Assign a random seat to be the Hero
         heroSeatIndex = rng.Next(0, 6);
+
+        int index = 0;
+        for (int i = 0; i < 6; i++)
+        {
+            playerCards[i, 0] = deck[index++];
+            playerCards[i, 1] = deck[index++];
+        }
+
+        for (int i = 0; i < 5; i++)
+        {
+            communityCards[i] = deck[index++];
+        }
+    }
+    private void ShuffleAndDeal()
+    {
+        List<string> deck = new List<string>(deckList);
+        Random rng = new Random();
+        deck = deck.OrderBy(_ => rng.Next()).ToList();
+
+        // If FixedDealerOption is true, dealer is fixed and hero is random.
+        // Otherwise, fix the hero and randomize the dealer.
+        if (FixedDealerOption)
+        {
+            dealerSeatIndex = 1; // fixed dealer seat
+            heroSeatIndex = rng.Next(0, 6);
+        }
+        else
+        {
+            heroSeatIndex = 0; // fixed hero seat (change if you prefer a different index)
+                               // Randomly choose a dealer different from the hero
+            do
+            {
+                dealerSeatIndex = rng.Next(0, 6);
+            } while (dealerSeatIndex == heroSeatIndex);
+        }
 
         int index = 0;
         for (int i = 0; i < 6; i++)
