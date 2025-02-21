@@ -185,7 +185,7 @@
 
         // We'll define offsets for hole cards so they appear near the seat
         double holeCardVerticalOffset = -cardHeight - 10; // place above seat
-        double holeCardHorizontalSpacing = 5;             // space between 2 hole cards
+        double holeCardHorizontalSpacing = 2;             // space between 2 hole cards
 
         for (int playerIndex = 0; playerIndex < 6; playerIndex++)
         {
@@ -210,7 +210,7 @@
                                  - (cardWidth + holeCardHorizontalSpacing / 2)
                                  + (holeIndex * (cardWidth + holeCardHorizontalSpacing));
                 // yOffset above the seat
-                double yOffset = seatY + holeCardVerticalOffset;
+                double yOffset =40+seatY + holeCardVerticalOffset;
 
                 // Get the correct hole card reference for this player
                 ElementReference holeCardRef = PlayerHoleCardRefs[playerIndex, holeIndex];
