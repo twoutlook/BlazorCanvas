@@ -31,6 +31,11 @@
                 <li>先確定六人桌基本位置。</li>
                 <li>公共牌有按翻牌，轉牌及河牌動態出現。</li>
             </ul>
+            <!-- Add Button for Next Random Hand -->
+            <button @onclick="NextRandomHand"
+                    style="padding: 8px 12px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
+                Next Random Hand
+            </button>
         </div>
 
         <div>
@@ -48,8 +53,11 @@
 {
     <img src="img/deck/@(card).png" style="display:none;" @ref="cardImages[card]" />
 }
-
+<img src="img/deck/dealer.png" style="display:none;" @ref="DealerButton" />
 @code {
+    private ElementReference DealerButton;
+    private int dealerSeatIndex = 1; // Seat 1 is the dealer
+
     private bool IsDarkMode = true;
     private Size Size = new Size();
     private double FPS;
@@ -70,6 +78,15 @@
     private string[,] playerCards = new string[6, 2];
     private string[] communityCards = new string[5];
     private int currentCardIndex = -1;
+    private async Task NextRandomHand()
+    {
+        ShuffleAndDeal();  // Generate a new random hand
+        currentCardIndex = -1;  // Reset community cards
+
+        StateHasChanged();  // Force UI update
+
+        await DealCardsAsync();  // Animate the deal again
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -183,6 +200,18 @@
                     await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
                 }
             }
+        }
+        // Dealer Button Placement
+        // Dealer Button Placement - Move it closer to the table
+        if (dealerSeatIndex >= 0 && dealerSeatIndex < 6)
+        {
+            double dealerAngle = dealerSeatIndex * (2 * Math.PI / 6);
+
+            // Adjust position so it's inside the table near Seat 1
+            double dealerX = centerX + (seatRadiusX - 80) * Math.Cos(dealerAngle); // Move closer to center
+            double dealerY = centerY + (seatRadiusY - 80) * Math.Sin(dealerAngle); // Move inside the table
+
+            await Ctx.DrawImageAsync(DealerButton, dealerX, dealerY, 30, 30);
         }
 
         await Ctx.EndBatchAsync();
