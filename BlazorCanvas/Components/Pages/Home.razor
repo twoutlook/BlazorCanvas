@@ -22,26 +22,32 @@
 </style>
 
 <div class="dark-page">
-    <div>
-        <h3>模擬六人桌發牌</h3>
-    </div>
-    <div>
-        <h4>TODO</h4>
-        <ul>
-            <li>九人桌要另外 layout</li>
-        </ul>
-    </div>
+    <!-- Title, TODO, etc. remain here if you want them above everything -->
+    <div style="display: flex; flex-direction: row;">
+        <h3>摸擬六人桌發牌</h3>
+        </div>
+    <div style="display: flex; flex-direction: row;">
+        <!-- Left Side: Note Panel -->
+        <div style="width: 200px; margin-right: 20px;">
+            <h4>Note</h4>
+            <p>XXXX</p>
+            <!-- Add more text or markup as needed -->
+        </div>
 
-    <!-- Canvas for the Poker Table -->
-    <CanvasHelper @ref="CanvasHelper"
-                  CanvasResized="CanvasResized"
-                  RenderFrame="RenderFrame"
-                  MouseDown="MouseDown"
-                  MouseUp="MouseUp"
-                  MouseMove="MouseMove">
-        <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
-    </CanvasHelper>
+        <!-- Right Side: Canvas -->
+        <div>
+            <CanvasHelper @ref="CanvasHelper"
+                          CanvasResized="CanvasResized"
+                          RenderFrame="RenderFrame"
+                          MouseDown="MouseDown"
+                          MouseUp="MouseUp"
+                          MouseMove="MouseMove">
+                <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
+            </CanvasHelper>
+        </div>
+    </div>
 </div>
+
 
 <!-- Community Cards (Flop, Turn, River) -->
 <img src="img/deck/Ks.png" style="display:none;" @ref="ImageElements[0]" />
@@ -166,7 +172,7 @@
         // 4) Draw community cards (centered)
         int totalCards = 5;
         double totalCardWidth = (cardWidth * totalCards) + (cardSpacing * (totalCards - 1));
-        double startXCommunity = centerX - (totalCardWidth / 2);
+        double startXCommunity = 80 + centerX - (totalCardWidth / 2);
         double startYCommunity = centerY - (cardHeight / 2) + 10; // adjust up/down as needed
 
         for (int i = 0; i <= currentCardIndex; i++)
@@ -211,6 +217,14 @@
                                  + (holeIndex * (cardWidth + holeCardHorizontalSpacing));
                 // yOffset above the seat
                 double yOffset =40+seatY + holeCardVerticalOffset;
+
+                // Adjust position for the leftmost seat
+                if (playerIndex == 3)  // Adjust based on seat index
+                {
+                    xOffset += 19; // Move the leftmost cards slightly right
+                }
+
+
 
                 // Get the correct hole card reference for this player
                 ElementReference holeCardRef = PlayerHoleCardRefs[playerIndex, holeIndex];
