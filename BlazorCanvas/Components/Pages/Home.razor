@@ -37,7 +37,7 @@
             <CanvasHelper @ref="CanvasHelper"
             CanvasResized="CanvasResized"
             RenderFrame="RenderFrame">
-                <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
+                <BECanvas Width="800" Height="400" @ref="CanvasReference"></BECanvas>
             </CanvasHelper>
         </div>
     </div>
@@ -116,10 +116,12 @@
         FPS = fps;
         await Ctx.BeginBatchAsync();
         await Ctx.SetFillStyleAsync("#000000");
-        await Ctx.FillRectAsync(0, 0, 600, 400);
+        await Ctx.FillRectAsync(0, 0, 800, 460);
 
-        double centerX = 300;
-        double centerY = 200;
+        // double centerX = 300;
+        // double centerY = 200;
+        double centerX = 400;
+        double centerY = 230;
 
         await Ctx.SaveAsync();
         await Ctx.TranslateAsync(centerX, centerY);
