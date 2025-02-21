@@ -1,21 +1,22 @@
 ﻿@inject IJSRuntime JS
 
 @page "/"
+@using Blazor.Extensions.Canvas.Model
 
 <PageTitle>Home</PageTitle>
 <style>
     /* This CSS will only apply within this component */
     .dark-page {
-        background-color: #121212;
-        color: #e0e0e0;
-        min-height: 100vh; /* Ensure it covers the full viewport height */
-        padding: 20px;
+    background-color: #121212;
+    color: #e0e0e0;
+    min-height: 100vh; /* Ensure it covers the full viewport height */
+    padding: 20px;
     }
-        /* Override any specific elements if needed */
-        .dark-page header,
-        .dark-page footer {
-            background-color: #1e1e1e;
-        }
+    /* Override any specific elements if needed */
+    .dark-page header,
+    .dark-page footer {
+    background-color: #1e1e1e;
+    }
 </style>
 <div class="dark-page">
     <div>
@@ -27,17 +28,17 @@
             <li>九人桌要另外 layout</li>
         </ul>
     </div>
-<CanvasHelper @ref="CanvasHelper"
-              CanvasResized="CanvasResized"
-              RenderFrame="RenderFrame"
-              MouseDown="MouseDown"
-              MouseUp="MouseUp"
-              MouseMove="MouseMove">
+    <CanvasHelper @ref="CanvasHelper"
+    CanvasResized="CanvasResized"
+    RenderFrame="RenderFrame"
+    MouseDown="MouseDown"
+    MouseUp="MouseUp"
+    MouseMove="MouseMove">
 
-    <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
+        <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
 
-</CanvasHelper>
-   
+    </CanvasHelper>
+
 
 
 </div>
@@ -76,7 +77,7 @@
     private async Task DealCardsAsync()
     {
         await Task.Delay(1000); // Sh
-        // Show the first 3 cards (Flop) together
+                                // Show the first 3 cards (Flop) together
         currentCardIndex = 2;
         await Task.Delay(1000); // Show Flop after 1s
 
@@ -104,16 +105,15 @@
         FPS = fps;
         await this.Ctx.BeginBatchAsync();
 
-        // === 1) Fill background (already dark due to your .dark-page or other styling) ===
-        await this.Ctx.SetFillStyleAsync("#000000"); // or #121212
+        // 1) Fill the background
+        await this.Ctx.SetFillStyleAsync("#000000");
         await this.Ctx.FillRectAsync(0, 0, 600, 400);
 
-        // === 2) Draw the poker table as an oval (using canvas scaling) ===
-        // Center of the table in unscaled coordinates
+        // 2) Draw the poker table (oval)
         double centerX = 300;
         double centerY = 200;
 
-        // Draw green felt
+        // Green felt
         await this.Ctx.SaveAsync();
         await this.Ctx.TranslateAsync(centerX, centerY);
         await this.Ctx.ScaleAsync(2.0, 1.3);
@@ -123,7 +123,7 @@
         await this.Ctx.FillAsync();
         await this.Ctx.RestoreAsync();
 
-        // Draw brown border
+        // Brown border
         await this.Ctx.SaveAsync();
         await this.Ctx.TranslateAsync(centerX, centerY);
         await this.Ctx.ScaleAsync(2.0, 1.3);
@@ -134,68 +134,57 @@
         await this.Ctx.StrokeAsync();
         await this.Ctx.RestoreAsync();
 
-        // Title text
-        // await this.Ctx.SetFontAsync("26px Segoe UI");
-        // // await this.Ctx.SetFillStyleAsync("#FFFFFF");
-        // await this.Ctx.SetFillStyleAsync("#FFFFFF");
-
-        // await this.Ctx.FillTextAsync("OverBankroll", 180, 150);
-        // await this.Ctx.SetFontAsync("28px 'Brush Script MT', cursive");
+        // 3) Center the table title
+        //    - Measure the text width and place it so that it's horizontally centered around centerX.
         await this.Ctx.SetFontAsync("28px Segoe UI");
+        string tableTitle = "OverBankroll";
+        TextMetrics titleMetrics = await this.Ctx.MeasureTextAsync(tableTitle);
+        double titleWidth = titleMetrics.Width;
+        double titleX = centerX - (titleWidth / 2); // horizontal centering
+        double titleY = 160;                        // adjust as desired (vertical placement)
 
-        await this.Ctx.SetFillStyleAsync("#000000"); // Dark green
-        await this.Ctx.FillTextAsync("OverBankroll", 180, 150);
+        // await this.Ctx.SetFillStyleAsync("#FFFFFF");
+        await this.Ctx.SetFillStyleAsync("#1e4d2b");
 
-        // === 3) Center the 5 community cards on the table ===
-        // Example card sizes (tweak as needed)
+        await this.Ctx.FillTextAsync(tableTitle, titleX, titleY);
+
+        // 4) Draw community cards centered
         double cardWidth = 36;
         double cardHeight = 49.5;
         double cardSpacing = 38;
+        int totalCards = 5; // If you always have 5 community cards
 
-        // Calculate total width of 5 cards + 4 spaces
-        double totalCardWidth = (cardWidth * 5) + (cardSpacing * 4);
-        // Start horizontally so that the community cards are centered around centerX
-        double startXCommunity = centerX - (totalCardWidth / 2);
-        // Adjust vertical placement slightly above or below centerY
-        double startYCommunity = centerY - (cardHeight / 2) - 10; // -10 for slight upward shift
+        // Calculate total width of the (up to) 5 cards plus spacing
+        double totalCardWidth = (cardWidth * totalCards) + (cardSpacing * (totalCards - 1));
 
-        // Draw each community card up to currentCardIndex
+        double adjX = 80;
+        double startXCommunity = adjX+ centerX - (totalCardWidth / 2);  // horizontally center
+        double startYCommunity = centerY - (cardHeight / 2) + 10; // adjust +10 or -10 for vertical offset
+
         for (int i = 0; i <= currentCardIndex; i++)
         {
             double xPos = startXCommunity + i * cardSpacing;
             await this.Ctx.DrawImageAsync(ImageElements[i], xPos, startYCommunity, cardWidth, cardHeight);
         }
 
-        // === 4) Draw 6 seats around the ellipse (unscaled coordinate system) ===
-        // The table's ellipse in unscaled coords is effectively:
-        //   Rx = 125 * 2.0 = 250
-        //   Ry = 125 * 1.3 = 162.5
-        // We'll add an offset so the seats lie outside the border radius
+        // 5) Draw the 6 seats around the table border
         double tableRadiusX = 125 * 2.0;
         double tableRadiusY = 125 * 1.3;
-        double seatOffset = 30; // how far outside the table border to place seats
+        double seatOffset = 30;
         double seatRadiusX = tableRadiusX + seatOffset;
         double seatRadiusY = tableRadiusY + seatOffset;
+        double seatCircleRadius = 20; // actual circle radius in final (non-scaled) coords
 
-        // Each seat is drawn as a circle in the final coordinate system
-        // so we'll just pick a seat circle radius in the final (non-scaled) space
-        double seatCircleRadius = 20; // how big each seat circle is
-
-        // 6 seats, evenly spaced: angle increments of 60 degrees (2π/6)
         for (int i = 0; i < 6; i++)
         {
             double angle = i * (2 * Math.PI / 6); // 0, 60°, 120°, ...
-
-            // Parametric ellipse around center
             double seatX = centerX + seatRadiusX * Math.Cos(angle);
             double seatY = centerY + seatRadiusY * Math.Sin(angle);
 
             await this.Ctx.BeginPathAsync();
-            // Draw seat circle with radius seatCircleRadius
             await this.Ctx.ArcAsync(seatX, seatY, seatCircleRadius, 0, 2 * Math.PI, false);
             await this.Ctx.SetFillStyleAsync("#333333");
             await this.Ctx.FillAsync();
-            // Optional border
             await this.Ctx.SetStrokeStyleAsync("#FFFFFF");
             await this.Ctx.SetLineWidthAsync(2);
             await this.Ctx.StrokeAsync();
@@ -204,82 +193,7 @@
         await this.Ctx.EndBatchAsync();
     }
 
-    public async Task xxxRenderFrame(double fps)
-    {
-        FPS = fps;
-        await this.Ctx.BeginBatchAsync();
-
-        // Dark mode background for the entire page (as set in your scoped CSS)
-        await this.Ctx.SetFillStyleAsync("#121212");
-        await this.Ctx.FillRectAsync(0, 0, 600, 400);
-
-        // Draw Poker Table Background (Oval Shape)
-        await this.Ctx.SaveAsync();
-        await this.Ctx.TranslateAsync(300, 200); // center of canvas
-        await this.Ctx.ScaleAsync(2.0, 1.3);
-        await this.Ctx.BeginPathAsync();
-        await this.Ctx.SetFillStyleAsync("#116611"); // Dark green felt
-        await this.Ctx.ArcAsync(0, 0, 125, 0, 2 * Math.PI, false);
-        await this.Ctx.FillAsync();
-        await this.Ctx.RestoreAsync();
-
-        // Draw Poker Table Border
-        await this.Ctx.SaveAsync();
-        await this.Ctx.TranslateAsync(300, 200);
-        await this.Ctx.ScaleAsync(2.0, 1.3);
-        await this.Ctx.BeginPathAsync();
-        await this.Ctx.SetStrokeStyleAsync("#774422"); // Brown wooden edge
-        await this.Ctx.SetLineWidthAsync(8);
-        await this.Ctx.ArcAsync(0, 0, 130, 0, 2 * Math.PI, false);
-        await this.Ctx.StrokeAsync();
-        await this.Ctx.RestoreAsync();
-
-        // Draw Table Title
-        await this.Ctx.SetFontAsync("26px Segoe UI");
-        await this.Ctx.SetFillStyleAsync("#FFFFFF");
-        await this.Ctx.FillTextAsync("Blazor Poker Table", 180, 100);
-
-        // Draw Community Cards (centered)
-        double totalCardWidth = (cardWidth * 5) + (cardSpacing * 4);
-        double startXCommunity = (600 - totalCardWidth) / 2;
-        for (int i = 0; i <= currentCardIndex; i++)
-        {
-            double cardX = startXCommunity + (i * cardSpacing);
-            await this.Ctx.DrawImageAsync(ImageElements[i], cardX, startY, cardWidth, cardHeight);
-        }
-
-        // --- New Section: Draw 6 Seats as Circles ---
-        // Define the center of the table
-        double centerX = 300;
-        double centerY = 200;
-        // Set the radius of each seat circle (the seat itself)
-        double seatRadius = 20;
-        // Distance from the table center to where seats should be placed
-        double seatCircleRadius = 160;
-
-        // Loop to draw 6 seats evenly spaced around the table
-        for (int i = 0; i < 6; i++)
-        {
-            // Calculate angle (in radians). 2π/6 separation
-            double angle = i * (2 * Math.PI / 6);
-            double seatX = centerX + seatCircleRadius * Math.Cos(angle);
-            double seatY = centerY + seatCircleRadius * Math.Sin(angle);
-
-            await this.Ctx.BeginPathAsync();
-            await this.Ctx.ArcAsync(seatX, seatY, seatRadius, 0, 2 * Math.PI, false);
-            // Fill the seat with a dark color, adjust as needed
-            await this.Ctx.SetFillStyleAsync("#333333");
-            await this.Ctx.FillAsync();
-            // Optionally, add a border around the seat for visibility
-            await this.Ctx.SetStrokeStyleAsync("#FFFFFF");
-            await this.Ctx.SetLineWidthAsync(2);
-            await this.Ctx.StrokeAsync();
-        }
-
-        await this.Ctx.EndBatchAsync();
-    }
-
-
+  
 
 
 
