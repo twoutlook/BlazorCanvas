@@ -8,16 +8,16 @@
 
 <style>
     .dark-page {
-    background-color: #121212;
-    color: #e0e0e0;
-    min-height: 100vh;
-    padding: 20px;
+        background-color: #121212;
+        color: #e0e0e0;
+        min-height: 100vh;
+        padding: 20px;
     }
 
-    .dark-page header,
-    .dark-page footer {
-    background-color: #1e1e1e;
-    }
+        .dark-page header,
+        .dark-page footer {
+            background-color: #1e1e1e;
+        }
 </style>
 
 <div class="dark-page">
@@ -36,12 +36,27 @@
                     style="padding: 8px 12px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
                 Next Random Hand
             </button>
+            <!-- Show All Cards Toggle -->
+        <!-- Show All Cards Toggle -->
+            <InputRadioGroup @bind-Value="ShowAllCards">
+                <div style="margin-top: 10px;">
+                    <label>
+                        <InputRadio Value="true" /> Show All Cards
+                    </label>
+                    <label style="margin-left: 10px;">
+                        <InputRadio Value="false" /> Show Hero Only
+                    </label>
+                </div>
+            </InputRadioGroup>
+
+
+
         </div>
 
         <div>
             <CanvasHelper @ref="CanvasHelper"
-            CanvasResized="CanvasResized"
-            RenderFrame="RenderFrame">
+                          CanvasResized="CanvasResized"
+                          RenderFrame="RenderFrame">
                 <BECanvas Width="800" Height="400" @ref="CanvasReference"></BECanvas>
             </CanvasHelper>
         </div>
@@ -63,6 +78,7 @@
     private int heroSeatIndex = -1; // Randomly assigned hero
     private ElementReference CardBack;
 
+    private bool ShowAllCards = false; // Default: Show Hero only
 
 
     private bool IsDarkMode = true;
@@ -175,7 +191,7 @@
         {
             if (cardImages.TryGetValue(communityCards[i], out var imageRef))
             {
-                double xPos = startXCommunityAdj+startXCommunity + i * cardSpacing;
+                double xPos = startXCommunityAdj + startXCommunity + i * cardSpacing;
                 await Ctx.DrawImageAsync(imageRef, xPos, startYCommunity, cardWidth, cardHeight);
             }
         }
@@ -186,7 +202,6 @@
         double seatRadiusX = tableRadiusX + seatOffset;
         double seatRadiusY = tableRadiusY + seatOffset;
         double seatCircleRadius = 20;
-
 
         for (int i = 0; i < 6; i++)
         {
@@ -208,9 +223,9 @@
                 double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
                 double yOffset = seatY - 20;
 
-                if (i == heroSeatIndex)
+                if (ShowAllCards || i == heroSeatIndex)
                 {
-                    // Hero's real cards
+                    // Show all cards if toggle is ON, otherwise only show Hero's cards
                     if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
                     {
                         await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
@@ -218,7 +233,7 @@
                 }
                 else
                 {
-                    // Non-hero players use the card back
+                    // Hide non-Hero hands if ShowAllCards == false
                     await Ctx.DrawImageAsync(CardBack, xOffset, yOffset, cardWidth, cardHeight);
                 }
             }
@@ -231,6 +246,7 @@
         //     double seatX = centerX + seatRadiusX * Math.Cos(angle);
         //     double seatY = centerY + seatRadiusY * Math.Sin(angle);
 
+        //     // Seat circle
         //     await Ctx.BeginPathAsync();
         //     await Ctx.ArcAsync(seatX, seatY, seatCircleRadius, 0, 2 * Math.PI, false);
         //     await Ctx.SetFillStyleAsync("#333333");
@@ -241,16 +257,27 @@
 
         //     for (int j = 0; j < 2; j++)
         //     {
-        //         if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
+        //         double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
+        //         double yOffset = seatY - 20;
+
+        //         if (i == heroSeatIndex)
         //         {
-        //             double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
-        //             double yOffset = seatY - 20;
-        //             await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
+        //             // Hero's real cards
+        //             if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
+        //             {
+        //                 await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
+        //             }
+        //         }
+        //         else
+        //         {
+        //             // Non-hero players use the card back
+        //             await Ctx.DrawImageAsync(CardBack, xOffset, yOffset, cardWidth, cardHeight);
         //         }
         //     }
         // }
-        // Dealer Button Placement
-        // Dealer Button Placement - Move it closer to the table
+
+
+      
         if (dealerSeatIndex >= 0 && dealerSeatIndex < 6)
         {
             double dealerAngle = dealerSeatIndex * (2 * Math.PI / 6);
