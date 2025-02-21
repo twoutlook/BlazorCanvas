@@ -7,101 +7,69 @@
 <PageTitle>Home</PageTitle>
 
 <style>
-    /* This CSS applies only to this component. */
     .dark-page {
-        background-color: #121212;
-        color: #e0e0e0;
-        min-height: 100vh; /* Ensure it covers the full viewport height */
-        padding: 20px;
+    background-color: #121212;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
     }
 
-        .dark-page header,
-        .dark-page footer {
-            background-color: #1e1e1e;
-        }
+    .dark-page header,
+    .dark-page footer {
+    background-color: #1e1e1e;
+    }
 </style>
 
 <div class="dark-page">
-    <!-- Title, TODO, etc. remain here if you want them above everything -->
     <div style="display: flex; flex-direction: row;">
-        <h3>摸擬六人桌發牌</h3>
+        <h3>模擬六人桌發牌</h3>
     </div>
     <div style="display: flex; flex-direction: row;">
-        <!-- Left Side: Note Panel -->
         <div style="width: 350px; margin-right: 20px;">
             <p>NOTE</p>
             <ul>
                 <li>先確定六人桌基本位置。</li>
                 <li>公共牌有按翻牌，轉牌及河牌動態出現。</li>
-                </ul>
-            <!-- Add more text or markup as needed -->
+            </ul>
         </div>
 
-        <!-- Right Side: Canvas -->
         <div>
             <CanvasHelper @ref="CanvasHelper"
-                          CanvasResized="CanvasResized"
-                          RenderFrame="RenderFrame"
-                          MouseDown="MouseDown"
-                          MouseUp="MouseUp"
-                          MouseMove="MouseMove">
+            CanvasResized="CanvasResized"
+            RenderFrame="RenderFrame">
                 <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
             </CanvasHelper>
         </div>
     </div>
-
 </div>
 
-
-<!-- Community Cards (Flop, Turn, River) -->
-<img src="img/deck/Ks.png" style="display:none;" @ref="ImageElements[0]" />
-<img src="img/deck/Qs.png" style="display:none;" @ref="ImageElements[1]" />
-<img src="img/deck/Js.png" style="display:none;" @ref="ImageElements[2]" />
-<img src="img/deck/Ts.png" style="display:none;" @ref="ImageElements[3]" />
-<img src="img/deck/9s.png" style="display:none;" @ref="ImageElements[4]" />
-
-<!-- Hole Cards for 6 Players (2 each = 12 images total) -->
-<!-- Player 0 -->
-<img src="img/deck/As.png" style="display:none;" @ref="PlayerHoleCardRefs[0,0]" />
-<img src="img/deck/Ah.png" style="display:none;" @ref="PlayerHoleCardRefs[0,1]" />
-<!-- Player 1 -->
-<img src="img/deck/Ks.png" style="display:none;" @ref="PlayerHoleCardRefs[1,0]" />
-<img src="img/deck/Kh.png" style="display:none;" @ref="PlayerHoleCardRefs[1,1]" />
-<!-- Player 2 -->
-<img src="img/deck/Qs.png" style="display:none;" @ref="PlayerHoleCardRefs[2,0]" />
-<img src="img/deck/Qh.png" style="display:none;" @ref="PlayerHoleCardRefs[2,1]" />
-<!-- Player 3 -->
-<img src="img/deck/Js.png" style="display:none;" @ref="PlayerHoleCardRefs[3,0]" />
-<img src="img/deck/Jh.png" style="display:none;" @ref="PlayerHoleCardRefs[3,1]" />
-<!-- Player 4 -->
-<img src="img/deck/Ts.png" style="display:none;" @ref="PlayerHoleCardRefs[4,0]" />
-<img src="img/deck/Th.png" style="display:none;" @ref="PlayerHoleCardRefs[4,1]" />
-<!-- Player 5 -->
-<img src="img/deck/9s.png" style="display:none;" @ref="PlayerHoleCardRefs[5,0]" />
-<img src="img/deck/9h.png" style="display:none;" @ref="PlayerHoleCardRefs[5,1]" />
+<!-- Preload all 52 card images -->
+@foreach (var card in deckList)
+{
+    <img src="img/deck/@(card).png" style="display:none;" @ref="cardImages[card]" />
+}
 
 @code {
     private bool IsDarkMode = true;
-
     private Size Size = new Size();
     private double FPS;
     private Canvas2DContext Ctx;
     private BECanvasComponent CanvasReference;
     private CanvasHelper CanvasHelper;
 
-    // 5 community cards
-    private ElementReference[] ImageElements = new ElementReference[5];
+    private List<string> deckList = new List<string>
+    {
+        "As", "Ah", "Ad", "Ac", "Ks", "Kh", "Kd", "Kc", "Qs", "Qh", "Qd", "Qc",
+        "Js", "Jh", "Jd", "Jc", "Ts", "Th", "Td", "Tc", "9s", "9h", "9d", "9c",
+        "8s", "8h", "8d", "8c", "7s", "7h", "7d", "7c", "6s", "6h", "6d", "6c",
+        "5s", "5h", "5d", "5c", "4s", "4h", "4d", "4c", "3s", "3h", "3d", "3c",
+        "2s", "2h", "2d", "2c"
+    };
 
-    // 6 players x 2 hole cards each = 12 references
-    private ElementReference[,] PlayerHoleCardRefs = new ElementReference[6, 2];
-
-    // For dealing community cards
-    private int currentCardIndex = -1; // No cards shown initially
-
-    // Basic card sizing
-    private double cardWidth = 36;
-    private double cardHeight = 49.5;
-    private double cardSpacing = 38;
+    private Dictionary<string, ElementReference> cardImages = new();
+    private string[,] playerCards = new string[6, 2];
+    private string[] communityCards = new string[5];
+    private int currentCardIndex = -1;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -109,22 +77,36 @@
         {
             Ctx = await CanvasReference.CreateCanvas2DAsync();
             await CanvasHelper.Initialize();
+            ShuffleAndDeal();
             await DealCardsAsync();
         }
     }
 
-    // Simple "dealing" demonstration: reveal community cards in steps
+    private void ShuffleAndDeal()
+    {
+        List<string> deck = new List<string>(deckList);
+        Random rng = new Random();
+        deck = deck.OrderBy(_ => rng.Next()).ToList();
+
+        int index = 0;
+        for (int i = 0; i < 6; i++)
+        {
+            playerCards[i, 0] = deck[index++];
+            playerCards[i, 1] = deck[index++];
+        }
+
+        for (int i = 0; i < 5; i++)
+        {
+            communityCards[i] = deck[index++];
+        }
+    }
+
     private async Task DealCardsAsync()
     {
-        // After 1 second, reveal first 3 cards (Flop)
         await Task.Delay(1000);
         currentCardIndex = 2;
-
-        // After another second, reveal the 4th card (Turn)
         await Task.Delay(1000);
         currentCardIndex = 3;
-
-        // After another second, reveal the 5th card (River)
         await Task.Delay(1000);
         currentCardIndex = 4;
     }
@@ -133,16 +115,12 @@
     {
         FPS = fps;
         await Ctx.BeginBatchAsync();
-
-        // 1) Fill the background
         await Ctx.SetFillStyleAsync("#000000");
         await Ctx.FillRectAsync(0, 0, 600, 400);
 
-        // 2) Draw the poker table (oval)
         double centerX = 300;
         double centerY = 200;
 
-        // Green felt
         await Ctx.SaveAsync();
         await Ctx.TranslateAsync(centerX, centerY);
         await Ctx.ScaleAsync(2.0, 1.3);
@@ -152,58 +130,40 @@
         await Ctx.FillAsync();
         await Ctx.RestoreAsync();
 
-        // Brown border
-        await Ctx.SaveAsync();
-        await Ctx.TranslateAsync(centerX, centerY);
-        await Ctx.ScaleAsync(2.0, 1.3);
-        await Ctx.BeginPathAsync();
-        await Ctx.SetStrokeStyleAsync("#774422");
-        await Ctx.SetLineWidthAsync(8);
-        await Ctx.ArcAsync(0, 0, 130, 0, 2 * Math.PI, false);
-        await Ctx.StrokeAsync();
-        await Ctx.RestoreAsync();
-
-        // 3) Table Title (centered horizontally)
         await Ctx.SetFontAsync("28px Segoe UI");
         string tableTitle = "OverBankroll";
         TextMetrics titleMetrics = await Ctx.MeasureTextAsync(tableTitle);
-        double titleWidth = titleMetrics.Width;
-        double titleX = centerX - (titleWidth / 2);
-        double titleY = 160; // Adjust as desired
-        await Ctx.SetFillStyleAsync("#1e4d2b"); // Dark green text
+        double titleX = centerX - (titleMetrics.Width / 2);
+        double titleY = 160;
+        await Ctx.SetFillStyleAsync("#1e4d2b");
         await Ctx.FillTextAsync(tableTitle, titleX, titleY);
 
-        // 4) Draw community cards (centered)
-        int totalCards = 5;
-        double totalCardWidth = (cardWidth * totalCards) + (cardSpacing * (totalCards - 1));
-        double startXCommunity = 80 + centerX - (totalCardWidth / 2);
-        double startYCommunity = centerY - (cardHeight / 2) + 10; // adjust up/down as needed
-
+        double cardWidth = 36, cardHeight = 49.5, cardSpacing = 38;
+        double startXCommunity = centerX - ((cardWidth * 5) + (cardSpacing * 4)) / 2;
+        double startYCommunity = centerY - (cardHeight / 2) + 10;
+        double startXCommunityAdj = 80;
         for (int i = 0; i <= currentCardIndex; i++)
         {
-            double xPos = startXCommunity + i * cardSpacing;
-            await Ctx.DrawImageAsync(ImageElements[i], xPos, startYCommunity, cardWidth, cardHeight);
+            if (cardImages.TryGetValue(communityCards[i], out var imageRef))
+            {
+                double xPos = startXCommunityAdj+startXCommunity + i * cardSpacing;
+                await Ctx.DrawImageAsync(imageRef, xPos, startYCommunity, cardWidth, cardHeight);
+            }
         }
 
-        // 5) Draw the 6 seats around the table border
-        double tableRadiusX = 125 * 2.0;
-        double tableRadiusY = 125 * 1.3;
+        double tableRadiusX = 250;
+        double tableRadiusY = 162;
         double seatOffset = 30;
         double seatRadiusX = tableRadiusX + seatOffset;
         double seatRadiusY = tableRadiusY + seatOffset;
         double seatCircleRadius = 20;
 
-        // We'll define offsets for hole cards so they appear near the seat
-        double holeCardVerticalOffset = -cardHeight - 10; // place above seat
-        double holeCardHorizontalSpacing = 2;             // space between 2 hole cards
-
-        for (int playerIndex = 0; playerIndex < 6; playerIndex++)
+        for (int i = 0; i < 6; i++)
         {
-            double angle = playerIndex * (2 * Math.PI / 6); // 6 seats, 60° apart
+            double angle = i * (2 * Math.PI / 6);
             double seatX = centerX + seatRadiusX * Math.Cos(angle);
             double seatY = centerY + seatRadiusY * Math.Sin(angle);
 
-            // Seat circle
             await Ctx.BeginPathAsync();
             await Ctx.ArcAsync(seatX, seatY, seatCircleRadius, 0, 2 * Math.PI, false);
             await Ctx.SetFillStyleAsync("#333333");
@@ -212,50 +172,19 @@
             await Ctx.SetLineWidthAsync(2);
             await Ctx.StrokeAsync();
 
-            // Hole cards for each player (2 cards)
-            for (int holeIndex = 0; holeIndex < 2; holeIndex++)
+            for (int j = 0; j < 2; j++)
             {
-                // xOffset for left or right card
-                double xOffset = seatX
-                                 - (cardWidth + holeCardHorizontalSpacing / 2)
-                                 + (holeIndex * (cardWidth + holeCardHorizontalSpacing));
-                // yOffset above the seat
-                double yOffset = 40 + seatY + holeCardVerticalOffset;
-
-                // Adjust position for the leftmost seat
-                if (playerIndex == 3)  // Adjust based on seat index
+                if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
                 {
-                    xOffset += 19; // Move the leftmost cards slightly right
+                    double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
+                    double yOffset = seatY - 20;
+                    await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
                 }
-
-
-
-                // Get the correct hole card reference for this player
-                ElementReference holeCardRef = PlayerHoleCardRefs[playerIndex, holeIndex];
-
-                // Draw the hole card image
-                await Ctx.DrawImageAsync(holeCardRef, xOffset, yOffset, cardWidth, cardHeight);
             }
         }
 
         await Ctx.EndBatchAsync();
     }
 
-    public void CanvasResized(Size size)
-    {
-        Size = size;
-    }
-
-    void MouseDown(CanvasMouseArgs args) { }
-    void MouseUp(CanvasMouseArgs args) { }
-    void MouseMove(CanvasMouseArgs args) { }
-
-    /// <summary>
-    /// Example placeholder if you need a method to fetch a player's hole card:
-    /// You could also directly access PlayerHoleCardRefs[player, cardIndex].
-    /// </summary>
-    private ElementReference GetPlayerHoleCardRef(int playerIndex, int cardIndex)
-    {
-        return PlayerHoleCardRefs[playerIndex, cardIndex];
-    }
+    public void CanvasResized(Size size) => Size = size;
 }
