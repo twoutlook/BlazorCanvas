@@ -54,9 +54,16 @@
     <img src="img/deck/@(card).png" style="display:none;" @ref="cardImages[card]" />
 }
 <img src="img/deck/dealer.png" style="display:none;" @ref="DealerButton" />
+<img src="img/deck/casino_card_back.png" style="display:none;" @ref="CardBack" />
+
 @code {
     private ElementReference DealerButton;
     private int dealerSeatIndex = 1; // Seat 1 is the dealer
+
+    private int heroSeatIndex = -1; // Randomly assigned hero
+    private ElementReference CardBack;
+
+
 
     private bool IsDarkMode = true;
     private Size Size = new Size();
@@ -104,6 +111,9 @@
         List<string> deck = new List<string>(deckList);
         Random rng = new Random();
         deck = deck.OrderBy(_ => rng.Next()).ToList();
+
+        // Assign a random seat to be the Hero
+        heroSeatIndex = rng.Next(0, 6);
 
         int index = 0;
         for (int i = 0; i < 6; i++)
@@ -177,12 +187,14 @@
         double seatRadiusY = tableRadiusY + seatOffset;
         double seatCircleRadius = 20;
 
+
         for (int i = 0; i < 6; i++)
         {
             double angle = i * (2 * Math.PI / 6);
             double seatX = centerX + seatRadiusX * Math.Cos(angle);
             double seatY = centerY + seatRadiusY * Math.Sin(angle);
 
+            // Seat circle
             await Ctx.BeginPathAsync();
             await Ctx.ArcAsync(seatX, seatY, seatCircleRadius, 0, 2 * Math.PI, false);
             await Ctx.SetFillStyleAsync("#333333");
@@ -193,14 +205,50 @@
 
             for (int j = 0; j < 2; j++)
             {
-                if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
+                double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
+                double yOffset = seatY - 20;
+
+                if (i == heroSeatIndex)
                 {
-                    double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
-                    double yOffset = seatY - 20;
-                    await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
+                    // Hero's real cards
+                    if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
+                    {
+                        await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
+                    }
+                }
+                else
+                {
+                    // Non-hero players use the card back
+                    await Ctx.DrawImageAsync(CardBack, xOffset, yOffset, cardWidth, cardHeight);
                 }
             }
         }
+
+
+        // for (int i = 0; i < 6; i++)
+        // {
+        //     double angle = i * (2 * Math.PI / 6);
+        //     double seatX = centerX + seatRadiusX * Math.Cos(angle);
+        //     double seatY = centerY + seatRadiusY * Math.Sin(angle);
+
+        //     await Ctx.BeginPathAsync();
+        //     await Ctx.ArcAsync(seatX, seatY, seatCircleRadius, 0, 2 * Math.PI, false);
+        //     await Ctx.SetFillStyleAsync("#333333");
+        //     await Ctx.FillAsync();
+        //     await Ctx.SetStrokeStyleAsync("#FFFFFF");
+        //     await Ctx.SetLineWidthAsync(2);
+        //     await Ctx.StrokeAsync();
+
+        //     for (int j = 0; j < 2; j++)
+        //     {
+        //         if (cardImages.TryGetValue(playerCards[i, j], out var cardRef))
+        //         {
+        //             double xOffset = seatX - (cardWidth / 2) + (j * cardWidth);
+        //             double yOffset = seatY - 20;
+        //             await Ctx.DrawImageAsync(cardRef, xOffset, yOffset, cardWidth, cardHeight);
+        //         }
+        //     }
+        // }
         // Dealer Button Placement
         // Dealer Button Placement - Move it closer to the table
         if (dealerSeatIndex >= 0 && dealerSeatIndex < 6)
