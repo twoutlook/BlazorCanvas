@@ -15,20 +15,24 @@
 
 </CanvasHelper>
 
-<img id="myImage" src="img/deck/Ks.png" style="display:none;" @ref="ImageElement" />
+<!-- Hidden image elements for preloading -->
+<img src="img/deck/Ks.png" style="display:none;" @ref="ImageElements[0]" />
+<img src="img/deck/Qs.png" style="display:none;" @ref="ImageElements[1]" />
+<img src="img/deck/Js.png" style="display:none;" @ref="ImageElements[2]" />
+<img src="img/deck/Ts.png" style="display:none;" @ref="ImageElements[3]" />
+<img src="img/deck/9s.png" style="display:none;" @ref="ImageElements[4]" />
 
 @code {
-
     private Size Size = new Size();
     private double FPS;
     private Canvas2DContext Ctx;
     private BECanvasComponent CanvasReference;
     private CanvasHelper CanvasHelper;
-    private Field BallField = new Field();
 
-    private ElementReference ImageElement;
-    private double imgX = 0, imgY = 0;
-    private double speed = 2;
+    private ElementReference[] ImageElements = new ElementReference[5]; // Store image references
+    private double[] cardX = { 100, 160, 220, 280, 340 }; // X positions for cards
+    private double cardY = 200; // Y position for all cards
+    private int currentCardIndex = -1; // No cards shown initially
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -36,40 +40,164 @@
         {
             Ctx = await CanvasReference.CreateCanvas2DAsync();
             await CanvasHelper.Initialize();
+
+            await DealCardsAsync();
         }
     }
 
+    private async Task DealCardsAsync()
+    {
+        await Task.Delay(1000); // Sh
+        // Show the first 3 cards (Flop) together
+        currentCardIndex = 2;
+        await Task.Delay(1000); // Show Flop after 1s
+
+        // Show the 4th card (Turn)
+        currentCardIndex = 3;
+        await Task.Delay(1000); // Show Turn after 1.5s
+
+        // Show the 5th card (River)
+        currentCardIndex = 4;
+        await Task.Delay(1000); // Show River after 1.5s
+    }
+
+    // private double cardWidth = 144;   // Adjusted card width (slightly wider)
+    // private double cardHeight = 198; // Adjusted card height (taller)
+    // private double cardWidth = 35;   // Adjusted card width (slightly wider)
+    // private double cardHeight = 48.125; // 1.375
+    private double cardWidth = 36;   // Adjusted card width (slightly wider)
+    private double cardHeight = 49.5; // 1.375
+
+    private double cardSpacing = 38; // Adjusted spacing (closer but still clear)
+    private double startX = 100;     // Start position for the first card
+    private double startY = 220;     // Slightly lower for a better table look
+  
     public async Task RenderFrame(double fps)
     {
         FPS = fps;
 
-        imgX += speed;
-        imgY += speed;
-
-        if (imgX > BallField.Width) imgX = 0;
-        if (imgY > BallField.Height) imgY = 0;
-
         await this.Ctx.BeginBatchAsync();
-        await this.Ctx.ClearRectAsync(0, 0, BallField.Width, BallField.Height);
-        await this.Ctx.SetFillStyleAsync("#003366");
-        await this.Ctx.FillRectAsync(0, 0, BallField.Width, BallField.Height);
 
+        // ✅ Step 1: Clear Canvas
+        await this.Ctx.ClearRectAsync(0, 0, 600, 400);
+
+        // ✅ Step 2: Draw Poker Table Background (Oval Shape)
+        await this.Ctx.SaveAsync();
+        await this.Ctx.TranslateAsync(300, 200);
+        await this.Ctx.ScaleAsync(2.0, 1.3);
+
+        await this.Ctx.BeginPathAsync();
+        await this.Ctx.SetFillStyleAsync("#116611"); // Dark green felt
+        await this.Ctx.ArcAsync(0, 0, 125, 0, 2 * Math.PI, false);
+        await this.Ctx.FillAsync();
+        await this.Ctx.RestoreAsync();
+
+        // ✅ Step 3: Add a Border to the Poker Table
+        await this.Ctx.SaveAsync();
+        await this.Ctx.TranslateAsync(300, 200);
+        await this.Ctx.ScaleAsync(2.0, 1.3);
+
+        await this.Ctx.BeginPathAsync();
+        await this.Ctx.SetStrokeStyleAsync("#774422"); // Brown wooden edge
+        await this.Ctx.SetLineWidthAsync(8);
+        await this.Ctx.ArcAsync(0, 0, 130, 0, 2 * Math.PI, false);
+        await this.Ctx.StrokeAsync();
+        await this.Ctx.RestoreAsync();
+
+        // ✅ Step 4: Fix Table Text Position
         await this.Ctx.SetFontAsync("26px Segoe UI");
         await this.Ctx.SetFillStyleAsync("#FFFFFF");
-        await this.Ctx.FillTextAsync("Blazor Canvas", 10, 30);
-        await this.Ctx.SetFontAsync("16px consolas");
-        await this.Ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 50);
+        await this.Ctx.FillTextAsync("Blazor Poker Table", 180, 100); // Moved down for better alignment
 
-        // ✅ Correct way to use an image in Blazor
-        await this.Ctx.DrawImageAsync(ImageElement, imgX, imgY, 40, 50);
+        // ✅ Step 5: Adjust Card Placement (Center Cards Inside Table)
+        double totalCardWidth = (cardWidth * 5) + (cardSpacing * 4); // Total width of all cards
+        double startX = (600 - totalCardWidth) / 2; // Center the first card
+
+        for (int i = 0; i <= currentCardIndex; i++)
+        {
+            double cardX = startX + (i * cardSpacing); // Even spacing from center
+            await this.Ctx.DrawImageAsync(ImageElements[i], cardX, startY, cardWidth, cardHeight);
+        }
 
         await this.Ctx.EndBatchAsync();
     }
 
+    public async Task XXX222XXXRenderFrame(double fps)
+    {
+        FPS = fps;
+
+        await this.Ctx.BeginBatchAsync();
+
+        // ✅ Step 1: Clear Canvas
+        await this.Ctx.ClearRectAsync(0, 0, 600, 400);
+
+        // ✅ Step 2: Draw Poker Table Background (Oval Shape Using Arc + Scale)
+        await this.Ctx.SaveAsync(); // Save the current state
+        await this.Ctx.TranslateAsync(300, 200); // Move to the center
+        await this.Ctx.ScaleAsync(2.0, 1.3); // Stretch horizontally to form an oval
+
+        await this.Ctx.BeginPathAsync();
+        await this.Ctx.SetFillStyleAsync("#116611"); // Dark green felt color
+        await this.Ctx.ArcAsync(0, 0, 125, 0, 2 * Math.PI, false); // Draw a circle
+        await this.Ctx.FillAsync();
+        await this.Ctx.RestoreAsync(); // Restore original scale
+
+        // ✅ Step 3: Add a Border to the Poker Table
+        await this.Ctx.SaveAsync();
+        await this.Ctx.TranslateAsync(300, 200);
+        await this.Ctx.ScaleAsync(2.0, 1.3);
+
+        await this.Ctx.BeginPathAsync();
+        await this.Ctx.SetStrokeStyleAsync("#774422"); // Brown wooden edge
+        await this.Ctx.SetLineWidthAsync(8);
+        await this.Ctx.ArcAsync(0, 0, 130, 0, 2 * Math.PI, false);
+        await this.Ctx.StrokeAsync();
+        await this.Ctx.RestoreAsync();
+
+        // ✅ Step 4: Draw Poker Table Text
+        await this.Ctx.SetFontAsync("26px Segoe UI");
+        await this.Ctx.SetFillStyleAsync("#FFFFFF");
+        await this.Ctx.FillTextAsync("Blazor Poker Table", 200, 50);
+
+        // ✅ Step 5: Draw Cards
+        for (int i = 0; i <= currentCardIndex; i++)
+        {
+            double cardX = startX + (i * cardSpacing); // Left to right positioning
+            await this.Ctx.DrawImageAsync(ImageElements[i], cardX, startY, cardWidth, cardHeight);
+        }
+
+        await this.Ctx.EndBatchAsync();
+    }
+
+
+    public async Task xxxRenderFrame(double fps)
+    {
+        FPS = fps;
+
+        await this.Ctx.BeginBatchAsync();
+        await this.Ctx.ClearRectAsync(0, 0, 600, 400);
+        await this.Ctx.SetFillStyleAsync("#003366");
+        await this.Ctx.FillRectAsync(0, 0, 600, 400);
+
+        await this.Ctx.SetFontAsync("26px Segoe UI");
+        await this.Ctx.SetFillStyleAsync("#FFFFFF");
+        await this.Ctx.FillTextAsync("Blazor Poker Table", 10, 30);
+
+        // ✅ Adjusted card positioning for a more natural layout
+        for (int i = 0; i <= currentCardIndex; i++)
+        {
+            double cardX = startX + (i * cardSpacing); // Left to right positioning
+            await this.Ctx.DrawImageAsync(ImageElements[i], cardX, startY, cardWidth, cardHeight);
+        }
+
+        await this.Ctx.EndBatchAsync();
+    }
+
+
+
     public void CanvasResized(Size size)
     {
         Size = size;
-        BallField.Resize(size.Width, size.Height);
     }
 
     void MouseDown(CanvasMouseArgs args) { }

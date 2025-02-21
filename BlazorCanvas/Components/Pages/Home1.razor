@@ -1,0 +1,78 @@
+﻿@inject IJSRuntime JS
+
+@page "/home1"
+
+<PageTitle>Home</PageTitle>
+
+<CanvasHelper @ref="CanvasHelper"
+              CanvasResized="CanvasResized"
+              RenderFrame="RenderFrame"
+              MouseDown="MouseDown"
+              MouseUp="MouseUp"
+              MouseMove="MouseMove">
+
+    <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
+
+</CanvasHelper>
+
+<img id="myImage" src="img/deck/Ks.png" style="display:none;" @ref="ImageElement" />
+
+@code {
+
+    private Size Size = new Size();
+    private double FPS;
+    private Canvas2DContext Ctx;
+    private BECanvasComponent CanvasReference;
+    private CanvasHelper CanvasHelper;
+    private Field BallField = new Field();
+
+    private ElementReference ImageElement;
+    private double imgX = 0, imgY = 0;
+    private double speed = 2;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Ctx = await CanvasReference.CreateCanvas2DAsync();
+            await CanvasHelper.Initialize();
+        }
+    }
+
+    public async Task RenderFrame(double fps)
+    {
+        FPS = fps;
+
+        imgX += speed;
+        imgY += speed;
+
+        if (imgX > BallField.Width) imgX = 0;
+        if (imgY > BallField.Height) imgY = 0;
+
+        await this.Ctx.BeginBatchAsync();
+        await this.Ctx.ClearRectAsync(0, 0, BallField.Width, BallField.Height);
+        await this.Ctx.SetFillStyleAsync("#003366");
+        await this.Ctx.FillRectAsync(0, 0, BallField.Width, BallField.Height);
+
+        await this.Ctx.SetFontAsync("26px Segoe UI");
+        await this.Ctx.SetFillStyleAsync("#FFFFFF");
+        await this.Ctx.FillTextAsync("Blazor Canvas", 10, 30);
+        await this.Ctx.SetFontAsync("16px consolas");
+        await this.Ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 50);
+
+        // ✅ Correct way to use an image in Blazor
+        await this.Ctx.DrawImageAsync(ImageElement, imgX, imgY, 40, 50);
+
+        await this.Ctx.EndBatchAsync();
+    }
+
+    public void CanvasResized(Size size)
+    {
+        Size = size;
+        BallField.Resize(size.Width, size.Height);
+    }
+
+    void MouseDown(CanvasMouseArgs args) { }
+    void MouseUp(CanvasMouseArgs args) { }
+    void MouseMove(CanvasMouseArgs args) { }
+}

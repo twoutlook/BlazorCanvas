@@ -1,0 +1,89 @@
+﻿@inject IJSRuntime JS
+
+@page "/home2"
+
+<PageTitle>Home</PageTitle>
+
+<CanvasHelper @ref="CanvasHelper"
+              CanvasResized="CanvasResized"
+              RenderFrame="RenderFrame"
+              MouseDown="MouseDown"
+              MouseUp="MouseUp"
+              MouseMove="MouseMove">
+
+    <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
+
+</CanvasHelper>
+
+<!-- Hidden image elements for preloading -->
+<img src="img/deck/Ks.png" style="display:none;" @ref="ImageElements[0]" />
+<img src="img/deck/Qs.png" style="display:none;" @ref="ImageElements[1]" />
+<img src="img/deck/Js.png" style="display:none;" @ref="ImageElements[2]" />
+<img src="img/deck/Ts.png" style="display:none;" @ref="ImageElements[3]" />
+<img src="img/deck/9s.png" style="display:none;" @ref="ImageElements[4]" />
+
+@code {
+    private Size Size = new Size();
+    private double FPS;
+    private Canvas2DContext Ctx;
+    private BECanvasComponent CanvasReference;
+    private CanvasHelper CanvasHelper;
+
+    private ElementReference[] ImageElements = new ElementReference[5]; // Store image references
+    private double[] cardX = { 100, 160, 220, 280, 340 }; // X positions for cards
+    private double cardY = 200; // Y position for all cards
+    private int currentCardIndex = -1; // No cards shown initially
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Ctx = await CanvasReference.CreateCanvas2DAsync();
+            await CanvasHelper.Initialize();
+
+            await DealCardsAsync();
+        }
+    }
+
+    private async Task DealCardsAsync()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            currentCardIndex = i;
+            await Task.Delay(i == 2 ? 1000 : 1500); // Flop together, then Turn & River separately
+        }
+    }
+
+    public async Task RenderFrame(double fps)
+    {
+        FPS = fps;
+
+        await this.Ctx.BeginBatchAsync();
+        await this.Ctx.ClearRectAsync(0, 0, 600, 400);
+        await this.Ctx.SetFillStyleAsync("#003366");
+        await this.Ctx.FillRectAsync(0, 0, 600, 400);
+
+        await this.Ctx.SetFontAsync("26px Segoe UI");
+        await this.Ctx.SetFillStyleAsync("#FFFFFF");
+        await this.Ctx.FillTextAsync("Blazor Poker Table", 10, 30);
+        await this.Ctx.SetFontAsync("16px consolas");
+        // await this.Ctx.FillTextAsync($"FPS: {fps:0.000}", 10, 50);
+
+        // ✅ Correct way to draw images
+        for (int i = 0; i <= currentCardIndex; i++)
+        {
+            await this.Ctx.DrawImageAsync(ImageElements[i], cardX[i], cardY, 50, 70);
+        }
+
+        await this.Ctx.EndBatchAsync();
+    }
+
+    public void CanvasResized(Size size)
+    {
+        Size = size;
+    }
+
+    void MouseDown(CanvasMouseArgs args) { }
+    void MouseUp(CanvasMouseArgs args) { }
+    void MouseMove(CanvasMouseArgs args) { }
+}
