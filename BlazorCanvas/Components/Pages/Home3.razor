@@ -1,23 +1,9 @@
 ﻿@inject IJSRuntime JS
 
-@page "/"
+@page "/home3"
 
 <PageTitle>Home</PageTitle>
-<style>
-    /* This CSS will only apply within this component */
-    .dark-page {
-        background-color: #121212;
-        color: #e0e0e0;
-        min-height: 100vh; /* Ensure it covers the full viewport height */
-        padding: 20px;
-    }
-        /* Override any specific elements if needed */
-        .dark-page header,
-        .dark-page footer {
-            background-color: #1e1e1e;
-        }
-</style>
-<div class="dark-page">
+
 <CanvasHelper @ref="CanvasHelper"
               CanvasResized="CanvasResized"
               RenderFrame="RenderFrame"
@@ -28,7 +14,6 @@
     <BECanvas Width="600" Height="400" @ref="CanvasReference"></BECanvas>
 
 </CanvasHelper>
-</div>
 
 <!-- Hidden image elements for preloading -->
 <img src="img/deck/Ks.png" style="display:none;" @ref="ImageElements[0]" />
@@ -38,8 +23,6 @@
 <img src="img/deck/9s.png" style="display:none;" @ref="ImageElements[4]" />
 
 @code {
-    private bool IsDarkMode = true; // Set based on user preference
-
     private Size Size = new Size();
     private double FPS;
     private Canvas2DContext Ctx;

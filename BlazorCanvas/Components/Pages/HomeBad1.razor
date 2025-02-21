@@ -1,0 +1,201 @@
+﻿@inject IJSRuntime JS
+
+@page "/home-bad-1"
+
+<PageTitle>Blazor Poker Table</PageTitle>
+
+<style>
+    body {
+        background-color: #111111; /* Dark page background */
+        margin: 0;
+        overflow: hidden;
+    }
+</style>
+
+<CanvasHelper @ref="CanvasHelper"
+              CanvasResized="CanvasResized"
+              RenderFrame="RenderFrame"
+              MouseDown="MouseDown"
+              MouseUp="MouseUp"
+              MouseMove="MouseMove">
+
+    <BECanvas Width="800" Height="500" @ref="CanvasReference"></BECanvas>
+
+</CanvasHelper>
+
+<!-- ✅ Preload community card images -->
+@if (ImageElements is not null)
+{
+    @for (int i = 0; i < 5; i++)
+    {
+        <img src="img/deck/back.png" style="display:none;" @ref="ImageElements[i]" />
+    }
+}
+
+<!-- ✅ Preload hole card images for each player -->
+@if (holeCardImages is not null)
+{
+    @for (int i = 0; i < 6; i++)
+    {
+        <img src="img/deck/back.png" style="display:none;" @ref="holeCardImages[i, 0]" />
+        <img src="img/deck/back.png" style="display:none;" @ref="holeCardImages[i, 1]" />
+    }
+}
+
+@code {
+    private Size Size = new Size();
+    private double FPS;
+    private Canvas2DContext Ctx;
+    private BECanvasComponent CanvasReference;
+    private CanvasHelper CanvasHelper;
+
+    private double tableCenterX = 400; // Center X of the poker table
+    private double tableCenterY = 250; // Center Y of the poker table
+    private double tableRadius = 180;  // Distance from center for player seats
+
+    private double cardWidth = 48;
+    private double cardHeight = 66;
+    private double cardSpacing = 50;
+
+    // ✅ Store player positions
+    private (double X, double Y)[] playerPositions = new (double, double)[6];
+
+    // ✅ Store ElementReferences for images (initialized in `OnInitialized()`)
+    private ElementReference[] ImageElements;
+    private ElementReference[,] holeCardImages;
+
+    // ✅ Deck of cards
+    private string[] deck = new string[]
+    {
+        "img/deck/As.png", "img/deck/Ks.png", "img/deck/Qs.png", "img/deck/Js.png",
+        "img/deck/Ts.png", "img/deck/9s.png", "img/deck/8s.png", "img/deck/7s.png",
+        "img/deck/6s.png", "img/deck/5s.png", "img/deck/4s.png", "img/deck/3s.png",
+        "img/deck/2s.png", "img/deck/Ac.png", "img/deck/Kc.png", "img/deck/Qc.png",
+        "img/deck/Jc.png", "img/deck/Tc.png", "img/deck/9c.png", "img/deck/8c.png"
+    };
+
+    private int currentCardIndex = -1; // No community cards shown initially
+
+    // ✅ Initialize Arrays Before Rendering
+    protected override void OnInitialized()
+    {
+        ImageElements = new ElementReference[5];   // 5 Community Cards
+        holeCardImages = new ElementReference[6, 2]; // 6 Players, 2 Hole Cards Each
+    }
+
+    private void DealHoleCards()
+    {
+        var rnd = new Random();
+        var shuffledDeck = deck.OrderBy(x => rnd.Next()).ToList();
+
+        for (int i = 0; i < 6; i++)
+        {
+            holeCardImages[i, 0] = ImageElements[i]; // Left hole card
+            holeCardImages[i, 1] = ImageElements[i + 6]; // Right hole card
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Ctx = await CanvasReference.CreateCanvas2DAsync();
+            await CanvasHelper.Initialize();
+
+            // ✅ Initialize Player Positions
+            double angleStep = 360 / 6;
+            for (int i = 0; i < 6; i++)
+            {
+                double angle = (angleStep * i - 90) * (Math.PI / 180);
+                playerPositions[i] = (
+                    tableCenterX + tableRadius * Math.Cos(angle),
+                    tableCenterY + tableRadius * Math.Sin(angle)
+                );
+            }
+
+            DealHoleCards(); // 🎴 Deal Random Hole Cards to Players
+
+            await DealCardsAsync();
+        }
+    }
+
+    private async Task DealCardsAsync()
+    {
+        // Show Flop (3 cards together)
+        currentCardIndex = 2;
+        await Task.Delay(1000);
+
+        // Show Turn
+        currentCardIndex = 3;
+        await Task.Delay(1500);
+
+        // Show River
+        currentCardIndex = 4;
+        await Task.Delay(1500);
+    }
+
+    public async Task RenderFrame(double fps)
+    {
+        await this.Ctx.BeginBatchAsync();
+
+        // ✅ Dark Page Background
+        await this.Ctx.SetFillStyleAsync("#222222");
+        await this.Ctx.FillRectAsync(0, 0, 800, 500);
+
+        // ✅ Draw Poker Table (Green Felt)
+        await this.Ctx.SaveAsync();
+        await this.Ctx.TranslateAsync(tableCenterX, tableCenterY);
+        await this.Ctx.ScaleAsync(2.2, 1.4);
+
+        await this.Ctx.BeginPathAsync();
+        await this.Ctx.SetFillStyleAsync("#116611");
+        await this.Ctx.ArcAsync(0, 0, 125, 0, 2 * Math.PI, false);
+        await this.Ctx.FillAsync();
+        await this.Ctx.RestoreAsync();
+
+        // ✅ Draw Poker Table Border
+        await this.Ctx.SaveAsync();
+        await this.Ctx.TranslateAsync(tableCenterX, tableCenterY);
+        await this.Ctx.ScaleAsync(2.2, 1.4);
+
+        await this.Ctx.BeginPathAsync();
+        await this.Ctx.SetStrokeStyleAsync("#774422");
+        await this.Ctx.SetLineWidthAsync(8);
+        await this.Ctx.ArcAsync(0, 0, 130, 0, 2 * Math.PI, false);
+        await this.Ctx.StrokeAsync();
+        await this.Ctx.RestoreAsync();
+
+        // ✅ Display Table Text
+        await this.Ctx.SetFontAsync("26px Segoe UI");
+        await this.Ctx.SetFillStyleAsync("#FFFFFF");
+        await this.Ctx.FillTextAsync("Blazor Poker Table", 280, 80);
+
+        // ✅ Deal Community Cards (Centered)
+        double totalCardWidth = (cardWidth * 5) + (cardSpacing * 4);
+        double startX = (800 - totalCardWidth) / 2;
+
+        for (int i = 0; i <= currentCardIndex; i++)
+        {
+            double cardX = startX + (i * cardSpacing);
+            await this.Ctx.DrawImageAsync(ImageElements[i], cardX, tableCenterY - 20, cardWidth, cardHeight);
+        }
+
+        // ✅ Display 6 Players' Hole Cards
+        for (int i = 0; i < 6; i++)
+        {
+            double cardX = playerPositions[i].X - (cardWidth / 2);
+            double cardY = playerPositions[i].Y - (cardHeight / 2);
+
+            await this.Ctx.DrawImageAsync(holeCardImages[i, 0], cardX - 20, cardY, cardWidth, cardHeight);
+            await this.Ctx.DrawImageAsync(holeCardImages[i, 1], cardX + 20, cardY, cardWidth, cardHeight);
+        }
+
+        await this.Ctx.EndBatchAsync();
+    }
+
+    public void CanvasResized(Size size) => Size = size;
+
+    void MouseDown(CanvasMouseArgs args) { }
+    void MouseUp(CanvasMouseArgs args) { }
+    void MouseMove(CanvasMouseArgs args) { }
+}
